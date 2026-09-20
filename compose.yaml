@@ -1,0 +1,21 @@
+services:
+
+  postgres:
+    image: postgres:17
+    container_name: postgres-rls
+    volumes:
+      - ./scripts:/docker-entrypoint-initdb.d:ro
+      - data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  
+volumes:
+  data:

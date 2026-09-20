@@ -1,0 +1,7 @@
+**/.env
+**/*.env
+**/.venv
+**/venv
+**/*.docs
+**/*seed*.sql
+**/*pycache*
