@@ -3,6 +3,6 @@
 **/.venv
 **/venv
 **/*.docs
-**/*seed*.sql
+# **/*seed*.sql
 **/*pycache*
 **/*.depricated
