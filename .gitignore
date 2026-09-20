@@ -5,3 +5,4 @@
 **/*.docs
 **/*seed*.sql
 **/*pycache*
+**/*.depricated
