@@ -6,3 +6,4 @@
 # **/*seed*.sql
 **/*pycache*
 **/*.depricated
+**/*uv.lock
