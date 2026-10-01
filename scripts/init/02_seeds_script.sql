@@ -15,25 +15,25 @@ begin;
         tenant_id,
         name,
         email,
-        password
+        password_hash
     )
     values
     (
         1,
         'Bob Vance',
         'bob_vance@email.com',
-        'bob_vance'
+        crypto.crypt('bob_vance', crypto.gen_salt('bf', 12))
     ),
     (
         2,
         'Dwieght Shrude',
         'dweight_shrude@email.com',
-        'dweight_shrude'
+        crypto.crypt('dweight_shrude', crypto.gen_salt('bf', 12))
     ),
     (
         2,
         'Michal Scott',
         'michal_scott@email.com',
-        'michal_scott'
+        crypto.crypt('michal_scott', crypto.gen_salt('bf', 12))
     );
 commit;

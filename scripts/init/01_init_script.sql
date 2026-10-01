@@ -37,10 +37,17 @@ commit;
 begin;
     create schema if not exists data;
     create schema if not exists api;
+    create schema if not exists crypto;
+
+    create extension if not exists pgcrypto with schema crypto;
 commit;
 
 -- 04   schema level privileges
 begin;
+
+    -- worker access to crypto
+    grant usage on schema crypto to db_worker;
+    grant usage on schema crypto to dev_role;
 
     -- developer access to data
     grant usage, create on schema data to dev_role;
@@ -87,7 +94,7 @@ begin;
         tenant_id int not null,
         name varchar(50),
         email text unique not null,
-        password text not null,
+        password_hash text not null,
         created_at timestamptz not null default current_timestamp,
 
         constraint users_tenant_id_fk
@@ -145,35 +152,56 @@ commit;
 -- 06   enable RLS
 begin;
     alter table data.tenants enable row level security;
+    alter table data.tenants force row level security;
     -- alter table data.users enable row level security;
     alter table data.user_calendars enable row level security;
+    alter table data.user_calendars force row level security;
     alter table data.user_calendar_events enable row level security;
+    alter table data.user_calendar_events force row level security;
 commit;
 
 
 -- 07   RLS policies
 begin;
-    create policy tenant_data_isoation_policy on data.tenants
+    create policy dbo_tenant_data_isoation_policy on data.tenants
     for all
-    to app_role
+    to dbo
     using (id=nullif(current_setting('data.current_tenant', true), '')::int)
-    with check (id=current_setting('data.current_tenant, true')::int);
+    with check (id=nullif(current_setting('data.current_tenant', true), '')::int);
     
+    create policy dev_role_tenant_data_isoation_policy on data.tenants
+    for all
+    to dev_role
+    using (id=nullif(current_setting('data.current_tenant', true), '')::int)
+    with check (id=nullif(current_setting('data.current_tenant', true), '')::int);
+
+    create policy db_worker_tenant_data_isoation_policy on data.tenants
+    for all
+    to db_worker
+    using (id=nullif(current_setting('data.current_tenant', true), '')::int)
+    with check (id=nullif(current_setting('data.current_tenant', true), '')::int);
+
     -- create policy users_data_isoation_policy on data.users
     -- for all
     -- to app_role
     -- using (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int)
     -- with check (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int);
     
-    create policy users_calendar_isoation_policy on data.user_calendars
+    create policy dbo_users_calendar_isoation_policy on data.user_calendars
     for all
-    to app_role
+    to dbo
     using (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int)
     with check (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int);
     
-    create policy users_calendar_event_isoation_policy on data.user_calendar_events
+    create policy dev_role_users_calendar_isoation_policy on data.user_calendars
     for all
-    to app_role
+    to dev_role
+    using (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int)
+    with check (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int);
+
+    create policy db_worker_users_calendar_event_isoation_policy on data.user_calendar_events
+    for all
+    to db_worker
     using (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int)
     with check (tenant_id=nullif(current_setting('data.current_tenant', true), '')::int);
 

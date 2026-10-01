@@ -3,7 +3,7 @@ begin;
     set role db_worker;
 
     -- create function with security definer
-    create or replace function api.get_all_user_calendars(p_tenant_id int, p_user_id int)
+    create or replace function api.get_all_user_calendars(p_user_id int)
     returns setof data.user_calendars
     language plpgsql
     security definer
@@ -12,7 +12,9 @@ begin;
         begin
             return query
                 select * from data.user_calendars uc
-                    where uc.tenant_id = p_tenant_id and uc.user_id = p_user_id;
+                    where 
+                        uc.user_id = p_user_id
+                        and uc.tenant_id = nullif(current_setting('data.current_tenant', true), ''):: int;
         end;
     $$;
 

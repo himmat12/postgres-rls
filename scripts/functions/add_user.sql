@@ -25,13 +25,13 @@ begin;
                 tenant_id, 
                 name, 
                 email, 
-                password
+                password_hash
             ) 
             values(
                 p_tenant_id,
                 p_name,
                 p_email,
-                p_password
+                crypto.crypt(p_password, crypto.gen_salt('bf', 12))
             )
             returning
                 u.id,

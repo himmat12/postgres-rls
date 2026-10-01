@@ -3,7 +3,7 @@ begin;
     set role db_worker;
 
     -- create function with security definer
-    create or replace function api.get_all_users()
+    create or replace function api.get_current_tenant_users()
     returns table(
         id int,
         tenant_id int,
@@ -23,7 +23,8 @@ begin;
                 u.name,
                 u.email,
                 u.created_at 
-            from data.users as u;
+            from data.users as u
+            where u.tenant_id = nullif(current_setting('data.current_tenant', true), ''):: int;
         end;
     $$;
 
@@ -31,10 +32,10 @@ begin;
     reset role;
 
     -- make sure to revoke public execution to th function
-    revoke execute on function api.get_all_users from public;
+    revoke execute on function api.get_current_tenant_users from public;
 
     -- grant execute to the function to app_role and dev_role
-    grant execute on function api.get_all_users to app_role;
-    grant execute on function api.get_all_users to dev_role;
+    grant execute on function api.get_current_tenant_users to app_role;
+    grant execute on function api.get_current_tenant_users to dev_role;
 
 commit;

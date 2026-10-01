@@ -26,15 +26,21 @@ services:
     env_file: 
       - .env
     volumes:
-      - ./scripts/migrations:/migrations:ro
-    entrypoint: ["psql"]
+      - ./scripts/functions:/migrations:ro
+    entrypoint: ["/bin/sh", "-ec"]
     command:
-      - "--set=ON_ERROR_STOP=1"
-      - "--host=postgres"
-      - "--port=5432"
-      - "--username=dbo"
-      - "--dbname=demo_db"
-      - "--file=/migrations/01_30092026_migrations.sql"
+      - |
+        for file in /migrations/*.sql; do
+          [ -f "$$file" ] || continue
+          echo "Running $$file"
+          psql \
+            --set=ON_ERROR_STOP=1 \
+            --host=postgres \
+            --port=5432 \
+            --username=dbo \
+            --dbname=demo_db \
+            --file="$$file"
+        done
     environment:
       PGPASSWORD: "${POSTGRES_PASSWORD}"
     restart: no

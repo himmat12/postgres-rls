@@ -10,25 +10,32 @@ DATABASE_URL = getenv("DATABASE_URL")
 APP_USER = getenv("APP_USER")
 APP_PASSWORD = getenv("APP_PASSWORD")
 
+
 async def init_db():
     return await asyncpg.connect(f"{DATABASE_URL}")
 
 
 async def auth(email: str, password: str, conn) -> dict[str, Any]:
     async with conn.transaction():
-        row = await conn.fetchrow(f"""
-                                    select * from api.get_user_by_email('{email}');
-                                  """)
-    failed_res = {"authenticated": False, "tenant_id": None}
+        row = await conn.fetchrow(
+            """
+            select * from api.authenticate_user($1, $2);
+            """,
+            email,
+            password,
+        )
+    failed_res = {"authenticated": False, "id": None, "tenant_id": None}
     if not row:
         return failed_res
 
     user = dict(row)
-    success_res = {"authenticated": True, "tenant_id": user.get("tenant_id")}
-    if user.get("password", "") == password:
-        return success_res
+    success_res = {
+        "authenticated": True,
+        "id": user.get("id"),
+        "tenant_id": user.get("tenant_id"),
+    }
 
-    return failed_res
+    return success_res
 
 
 async def main():
@@ -39,25 +46,28 @@ async def main():
     print(auth_res)
 
     async with conn.transaction():
-        await conn.execute(f"""
-                set local data.current_tenant = {auth_res["tenant_id"]};
-            """)
+        await conn.execute(
+            """
+                select set_config('data.current_tenant', $1, true)
+            """,
+            str(auth_res["tenant_id"]),
+        )
         res = await conn.fetchrow(
             """
                 select * from api.add_user($1, $2, $3, $4)
             """,
-            2,
-            "Troy Stone",
-            "troy_stone@email.com",
-            "troy_stone",
+            auth_res["tenant_id"],
+            "Tony Stark",
+            "tony_stark@email.com",
+            "tony_stark",
         )
 
         new_user = dict(res)
-        
-        print(new_user['id'])
-        print(new_user['name'])
-        print(new_user['email'])
-        print(new_user['created_at'])
+
+        print(new_user["id"])
+        print(new_user["name"])
+        print(new_user["email"])
+        print(new_user["created_at"])
     await conn.close()
 
 
